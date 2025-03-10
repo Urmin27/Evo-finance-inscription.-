@@ -20,8 +20,10 @@
       background-color: #ffe6ff;
       border-bottom: 4px solid #ff99cc;
     }
-    header h1 { font-size: 2.5rem; color: #cc0066; }
-    
+    header h1 {
+      font-size: 2.5rem;
+      color: #cc0066;
+    }
     /* Formulaire d'inscription */
     form {
       background: #fff;
@@ -31,7 +33,11 @@
       margin: 20px auto;
       box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
     }
-    form h2 { text-align: center; margin-bottom: 15px; color: #cc0066; }
+    form h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #cc0066;
+    }
     form label {
       display: block;
       margin-bottom: 5px;
@@ -45,9 +51,9 @@
       border: 2px solid #ff99cc;
       border-radius: 5px;
     }
-    form input:focus { border-color: #cc0066; }
-    
-    /* Bokotra */
+    form input:focus {
+      border-color: #cc0066;
+    }
     button {
       background-color: #ff99cc;
       border: none;
@@ -59,9 +65,13 @@
       display: block;
       margin: 10px auto;
     }
-    button:hover { background-color: #cc0066; transform: scale(1.05); }
-    
-    .hidden { display: none; }
+    button:hover {
+      background-color: #cc0066;
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
     .notification {
       position: fixed;
       top: 20px;
@@ -71,15 +81,13 @@
       padding: 10px;
       border-radius: 5px;
     }
-    
     /* Faritra miseho raha tsy misy query param inscription=1 */
     #copy-message {
       text-align: center;
       margin: 20px;
       color: #cc0066;
     }
-    
-    /* Tabilao lisitry ny mpampiasa (teams) – tsy misy code référal */
+    /* Tabilao lisitry ny mpampiasa (public) */
     #users-table {
       width: 90%;
       max-width: 800px;
@@ -95,7 +103,15 @@
       background-color: #ffe6ff;
       color: #cc0066;
     }
-    
+    /* Sombiny summary momba ny équipes */
+    #teams-summary {
+      width: 90%;
+      max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+      font-weight: bold;
+      color: #cc0066;
+    }
     /* Bokotra Connectez-vous */
     .login-button {
       background-color: #ff99cc;
@@ -109,7 +125,10 @@
       margin: 20px auto;
       display: block;
     }
-    .login-button:hover { background-color: #cc0066; transform: scale(1.05); }
+    .login-button:hover {
+      background-color: #cc0066;
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body>
@@ -119,9 +138,9 @@
   
   <!-- Faritra ho an'ny olona tsy miditra amin'ny lien inscription -->
   <div id="copy-message" class="hidden">
-    <p>Veuillez copier le lien d'inscription pour accéder à ce formulaire.</p>
+    <p>Veuillez copier le lien d'inscription et de connexion pour accéder à ce formulaire.</p>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
-    <!-- Aseho eto ny tabilao lisitry ny mpampiasa (teams) -->
+    <!-- Tabilao lisitry ny mpampiasa (public) -->
     <h2 style="margin-top:30px; color:#cc0066;">Liste des Utilisateurs</h2>
     <table id="users-table">
       <thead>
@@ -135,6 +154,11 @@
         <!-- Andalana avy amin'ny Firestore -->
       </tbody>
     </table>
+    <!-- Summary Teams -->
+    <div id="teams-summary">
+      <p>Total Équipes Validées : <span id="validated-teams-count">0</span></p>
+      <p>Total Équipes Non Validées : <span id="nonvalidated-teams-count">0</span></p>
+    </div>
   </div>
   
   <!-- Faritra ho an'ny formulaire d'inscription (rehefa misy ?inscription=1) -->
@@ -178,13 +202,12 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Fampisehoana araka ny URL: raha misy ?inscription=1 aseho ny formulaire, raha tsy dia aseho ny copy-message + tabilao users
+    // Mamaritra fisehoana araka ny query parameter
     function checkRegistrationLink() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
-        // Raha misy referral code ao amin'ny URL, pre-rempli sy disable ilay saha
         if (params.get("ref")) {
           const refCode = params.get("ref");
           document.getElementById("reg-referral").value = refCode;
@@ -194,6 +217,7 @@
         document.getElementById("registration-container").classList.add("hidden");
         document.getElementById("copy-message").classList.remove("hidden");
         loadUsersTable();
+        loadTeamsSummary();
       }
     }
     checkRegistrationLink();
@@ -206,7 +230,7 @@
       });
     });
     
-    // Bouton Connectez-vous: redirecte amin'ny pejy connexion
+    // Bouton Connectez-vous: redirecte any amin'ny pejy connexion
     document.getElementById("login-btn").addEventListener("click", () => {
       window.location.href = "connection.html"; // Ovay araka ny URL anao
     });
@@ -253,10 +277,9 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load lisitry ny mpampiasa ao amin'ny tabilao (tsy misy code référal)
+    // Load tabilao mpampiasa: Aseho ny Nom d'utilisateur, E-mail, ary Montant déposé
     async function loadUsersTable() {
       const tbody = document.getElementById("users-tbody");
-      // Raha tsy misy tbody, mamorona azy
       if (!tbody) {
         const table = document.getElementById("users-table");
         const newTbody = document.createElement("tbody");
@@ -264,7 +287,6 @@
         table.appendChild(newTbody);
       }
       document.getElementById("users-tbody").innerHTML = "";
-      
       const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
       const usersSnapshot = await getDocs(q);
       for (const userDoc of usersSnapshot.docs) {
@@ -283,6 +305,48 @@
         document.getElementById("users-tbody").appendChild(tr);
       }
     }
+    
+    // Load summary momba ny équipes: 
+    // Group by "team" amin'ny collection "utilisateurs"
+    // Raha misy mpampiasa ao amin'ny ekipa manana soldeDepot > 0 dia heverina ho validée
+    async function loadTeamsSummary() {
+      const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
+      let teams = {}; // Format: { teamName: { validated: boolean } }
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const teamName = userData.team || "Sans équipe";
+        if (!teams[teamName]) {
+          teams[teamName] = { validated: false };
+        }
+      }
+      // Hamarino ny balance amin'ny tsirairay avy ao amin'ny ekipa
+      for (const teamName in teams) {
+        const teamQuery = query(collection(db, "utilisateurs"), where("team", "==", teamName));
+        const teamSnapshot = await getDocs(teamQuery);
+        for (const userDoc of teamSnapshot.docs) {
+          const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
+          if (balanceSnap.exists() && (balanceSnap.data().soldeDepot || 0) > 0) {
+            teams[teamName].validated = true;
+            break;
+          }
+        }
+      }
+      let validatedCount = 0;
+      let nonValidatedCount = 0;
+      for (const team in teams) {
+        if (teams[team].validated) validatedCount++;
+        else nonValidatedCount++;
+      }
+      document.getElementById("validated-teams-count").innerText = validatedCount;
+      document.getElementById("nonvalidated-teams-count").innerText = nonValidatedCount;
+    }
+    
+    // Initial load raha tsy misy inscription=1
+    if (!new URLSearchParams(window.location.search).get("inscription")) {
+      loadUsersTable();
+      loadTeamsSummary();
+    }
+    
   </script>
 </body>
 </html>
