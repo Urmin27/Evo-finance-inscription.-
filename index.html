@@ -87,22 +87,6 @@
       margin: 20px;
       color: #cc0066;
     }
-    /* Tabilao lisitry ny mpampiasa (public) */
-    #users-table {
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
-      border-collapse: collapse;
-    }
-    #users-table th, #users-table td {
-      border: 2px solid #ff99cc;
-      padding: 8px;
-      text-align: center;
-    }
-    #users-table th {
-      background-color: #ffe6ff;
-      color: #cc0066;
-    }
     /* Sombiny summary momba ny équipes */
     #teams-summary {
       width: 90%;
@@ -140,25 +124,6 @@
   <div id="copy-message" class="hidden">
     <p>Veuillez copier le lien d'inscription et de connexion pour accéder à ce formulaire.</p>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
-    <!-- Tabilao lisitry ny mpampiasa (public) -->
-    <h2 style="margin-top:30px; color:#cc0066;">Liste des Utilisateurs</h2>
-    <table id="users-table">
-      <thead>
-        <tr>
-          <th>Nom d'utilisateur</th>
-          <th>E-mail</th>
-          <th>Montant déposé</th>
-        </tr>
-      </thead>
-      <tbody id="users-tbody">
-        <!-- Andalana avy amin'ny Firestore -->
-      </tbody>
-    </table>
-    <!-- Summary Teams -->
-    <div id="teams-summary">
-      <p>Total Équipes Validées : <span id="validated-teams-count">0</span></p>
-      <p>Total Équipes Non Validées : <span id="nonvalidated-teams-count">0</span></p>
-    </div>
   </div>
   
   <!-- Faritra ho an'ny formulaire d'inscription (rehefa misy ?inscription=1) -->
@@ -199,6 +164,12 @@
       </p>
     </form>
   </div>
+
+  <!-- Summary Teams -->
+  <div id="teams-summary">
+    <p>Total Équipes Validées : <span id="validated-teams-count">0</span></p>
+    <p>Total Équipes Non Validées : <span id="nonvalidated-teams-count">0</span></p>
+  </div>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
@@ -234,7 +205,6 @@
       } else {
         document.getElementById("registration-container").classList.add("hidden");
         document.getElementById("copy-message").classList.remove("hidden");
-        loadUsersTable();
         loadTeamsSummary();
       }
     }
@@ -327,44 +297,6 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load tabilao mpampiasa: Aseho ny Nom d'utilisateur, E-mail, ary Montant déposé
-    async function loadUsersTable() {
-      const tbody = document.getElementById("users-tbody");
-      if (!tbody) {
-        const table = document.getElementById("users-table");
-        const newTbody = document.createElement("tbody");
-        newTbody.id = "users-tbody";
-        table.appendChild(newTbody);
-      }
-      document.getElementById("users-tbody").innerHTML = "";
-      const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
-      const usersSnapshot = await getDocs(q);
-      const uniqueUsers = new Map(); // Mampiasa Map mba hanavahana ny mpampiasa miverina
-      for (const userDoc of usersSnapshot.docs) {
-        const userData = userDoc.data();
-        const email = userData.email;
-        // Raha tsy efa ao amin'ny Map ilay email, dia ampidirina
-        if (!uniqueUsers.has(email)) {
-          const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
-          let depositAmount = 0;
-          if (balanceSnap.exists()) {
-            depositAmount = balanceSnap.data().soldeDepot || 0;
-          }
-          uniqueUsers.set(email, { nom: userData.nom, email: userData.email, depositAmount });
-        }
-      }
-      // Mamorona ny tabilao avy amin'ny Map
-      uniqueUsers.forEach((user) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${user.nom || "Inconnu"}</td>
-          <td>${user.email}</td>
-          <td>${user.depositAmount}$</td>
-        `;
-        document.getElementById("users-tbody").appendChild(tr);
-      });
-    }
-    
     // Load summary momba ny équipes: 
     // Group by "team" amin'ny collection "utilisateurs"
     // Raha misy mpampiasa ao amin'ny ekipa manana soldeDepot > 0 dia heverina ho validée
@@ -402,7 +334,6 @@
     
     // Initial load raha tsy misy inscription=1
     if (!new URLSearchParams(window.location.search).get("inscription")) {
-      loadUsersTable();
       loadTeamsSummary();
     }
     
