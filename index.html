@@ -247,11 +247,12 @@
           referrer: referralInput || null,
           verified: false,
           timestamp: new Date(),
-          team: "Sans équipe"
+          team: referralInput || "Sans équipe" // Mampiditra ny mpampiasa ao amin'ny ekipa
         });
         await setDoc(doc(db, "balances", user.uid), { soldeDepot: 0, soldeGains: 0 });
         showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
         document.getElementById("registration-form").reset();
+        loadTeamsSummary(); // Mamerina ny calcul des équipes
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
@@ -302,13 +303,14 @@
     // Raha misy mpampiasa ao amin'ny ekipa manana soldeDepot > 0 dia heverina ho validée
     async function loadTeamsSummary() {
       const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
-      let teams = {}; // Format: { teamName: { validated: boolean } }
+      let teams = {}; // Format: { teamName: { validated: boolean, count: number } }
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
         const teamName = userData.team || "Sans équipe";
         if (!teams[teamName]) {
-          teams[teamName] = { validated: false };
+          teams[teamName] = { validated: false, count: 0 };
         }
+        teams[teamName].count++; // Manisa ny mpampiasa ao amin'ny ekipa
       }
       // Hamarino ny balance amin'ny tsirairay avy ao amin'ny ekipa
       for (const teamName in teams) {
