@@ -29,11 +29,7 @@
       margin: 20px auto;
       box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
     }
-    form h2 {
-      text-align: center;
-      margin-bottom: 15px;
-      color: #cc0066;
-    }
+    form h2 { text-align: center; margin-bottom: 15px; color: #cc0066; }
     form label {
       display: block;
       margin-bottom: 5px;
@@ -70,12 +66,38 @@
       padding: 10px;
       border-radius: 5px;
     }
-    /* Hafatra raha tsy miditra amin'ny lien inscription */
+    /* Hafatra sy tabilao rehefa tsy miditra amin'ny lien inscription */
     #copy-message {
       text-align: center;
       margin: 20px;
       color: #cc0066;
     }
+    #users-table {
+      width: 90%;
+      max-width: 800px;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    #users-table th, #users-table td {
+      border: 2px solid #ff99cc;
+      padding: 8px;
+      text-align: center;
+    }
+    #users-table th {
+      background-color: #ffe6ff;
+      color: #cc0066;
+    }
+    .copy-code-btn {
+      background-color: #ff99cc;
+      border: none;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background-color 0.3s;
+    }
+    .copy-code-btn:hover { background-color: #cc0066; }
     /* Bokotra Connectez-vous */
     .login-button {
       background-color: #ff99cc;
@@ -93,34 +115,6 @@
       background-color: #cc0066;
       transform: scale(1.05);
     }
-    /* Tabilao lisitry ny mpampiasa */
-    #users-table {
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
-      border-collapse: collapse;
-    }
-    #users-table th, #users-table td {
-      border: 2px solid #ff99cc;
-      padding: 8px;
-      text-align: center;
-    }
-    #users-table th {
-      background-color: #ffe6ff;
-      color: #cc0066;
-    }
-    /* Bokotra hifandraisana amin'ny code invitation */
-    .copy-code-btn {
-      background-color: #ff99cc;
-      border: none;
-      color: #fff;
-      padding: 5px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: background-color 0.3s;
-    }
-    .copy-code-btn:hover { background-color: #cc0066; }
   </style>
 </head>
 <body>
@@ -128,14 +122,29 @@
     <h1>Inscription EVO Finance</h1>
   </header>
   
-  <!-- Raha tsy misy query parameter inscription=1, aseho ny hafatra copy lien -->
+  <!-- Raha tsy misy ?inscription=1 ao amin'ny URL dia haseho ilay hafatra copy sy tabilao lisitry ny mpampiasa -->
   <div id="copy-message" class="hidden">
     Veuillez utiliser le lien d'inscription copié pour accéder à ce formulaire.
     <br>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
+    <!-- Tabilao lisitry ny mpampiasa (ekipa) -->
+    <h2 style="margin-top: 30px; color: #cc0066;">Liste des Équipes</h2>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>Nom d'utilisateur</th>
+          <th>E-mail</th>
+          <th>Montant déposé</th>
+          <th>Code Invitation</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        <!-- Andalana tsirairay avy eo dia ho apetraka avy amin'ny Firebase -->
+      </tbody>
+    </table>
   </div>
   
-  <!-- Formulaire d'inscription sy tabilao mpampiasa -->
+  <!-- Raha misy ?inscription=1 dia haseho ny formulaire d'inscription miaraka amin'ny bokotra Connectez-vous -->
   <div id="registration-container" class="hidden">
     <form id="registration-form">
       <h2>Formulaire d'inscription</h2>
@@ -149,30 +158,12 @@
       <input type="password" id="reg-password" required>
       
       <label for="reg-referral">Code Référal (optionnel) :</label>
-      <!-- Raha misy referral code ao amin'ny URL, pre-rempli ary disable -->
       <input type="text" id="reg-referral" placeholder="6 chiffres" maxlength="6">
       
       <button type="submit">S'inscrire</button>
     </form>
     
-    <!-- Bouton Connectez-vous -->
     <button class="login-button" id="login-btn">Connectez-vous</button>
-    
-    <!-- Tabilao lisitry ny mpampiasa (Nom, E-mail, Montant déposé, Code Invitation) -->
-    <h2 style="text-align: center; color: #cc0066; margin-top: 30px;">Liste des Utilisateurs</h2>
-    <table id="users-table">
-      <thead>
-        <tr>
-          <th>Nom d'utilisateur</th>
-          <th>E-mail</th>
-          <th>Montant déposé</th>
-          <th>Code Invitation</th>
-        </tr>
-      </thead>
-      <tbody id="users-tbody">
-        <!-- Ireo andalana dia hosoratana avy ao amin'ny Firestore -->
-      </tbody>
-    </table>
   </div>
   
   <script type="module">
@@ -194,13 +185,13 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Raha tsy misy query parameter inscription=1, aseho ny hafatra copy lien
+    // Raha tsy misy query parameter inscription=1, aseho ilay copy-message (miaraka amin'ny tabilao lisitra)
     function checkRegistrationLink() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
-        // Raha misy referral code ao amin'ny URL, pre-rempli ary disable
+        // Raha misy referral code ao amin'ny URL, pre-rempli sy disable ilay saha
         if (params.get("ref")) {
           const refCode = params.get("ref");
           document.getElementById("reg-referral").value = refCode;
@@ -209,6 +200,7 @@
       } else {
         document.getElementById("registration-container").classList.add("hidden");
         document.getElementById("copy-message").classList.remove("hidden");
+        loadUsersTable();
       }
     }
     checkRegistrationLink();
@@ -221,7 +213,7 @@
       });
     });
     
-    // Bouton Connectez-vous: redirecte amin'ny pejy connection
+    // Bouton Connectez-vous: redirecte any amin'ny pejy connexion
     document.getElementById("login-btn").addEventListener("click", () => {
       window.location.href = "connection.html"; // Ovay araka ny URL anao
     });
@@ -237,12 +229,10 @@
         showNotification("Le code référal doit être composé de 6 chiffres.");
         return;
       }
-      
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        
-        // Génération automatique ny code référal ho an'ny mpampiasa (6 chiffres)
+        // Génération automatique ny code référal (6 chiffres)
         const userReferralCode = Math.floor(100000 + Math.random() * 900000).toString();
         
         // Enregistrement ny angona ao amin'ny "utilisateurs"
@@ -252,7 +242,8 @@
           referralCode: userReferralCode,
           referrer: referralInput || null,
           verified: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          team: "Sans équipe"  // Raha tsy asaina manampy ekipa, dia default
         });
         
         // Initialize balance
@@ -260,7 +251,6 @@
         
         showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
         document.getElementById("registration-form").reset();
-        loadUsersTable();
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
@@ -275,18 +265,25 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load lisitry ny mpampiasa miaraka amin'ny balance (soldeDepot)
+    // Load lisitry ny mpampiasa (tabilao) avy amin'ny Firestore
     async function loadUsersTable() {
       const tbody = document.getElementById("users-tbody");
+      if (!tbody) {
+        // Raha tsy mbola misy ny tbody, dia mamorona azy ao anatin'ny copy-message
+        const table = document.getElementById("users-table");
+        tbody = document.createElement("tbody");
+        tbody.id = "users-tbody";
+        table.appendChild(tbody);
+      }
       tbody.innerHTML = "";
       
-      // Retrieve all users, sorted by timestamp desc (recent first)
+      // Maka ireo mpampiasa rehetra, farany aloha (orderBy timestamp desc)
       const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
       const usersSnapshot = await getDocs(q);
       
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
-        // Retrieve balance for this user
+        // Maka balance ho an'ny mpampiasa
         const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
         let depositAmount = 0;
         if (balanceSnap.exists()) {
@@ -306,16 +303,12 @@
       }
     }
     
-    // Function hanovàna ny code referral ao anaty clipboard
     window.copyReferralCode = function(code) {
       if (!code) return;
       navigator.clipboard.writeText(code).then(() => {
         showNotification("Code copié: " + code);
       });
     }
-    
-    // Initial load of table rehefa miditra
-    loadUsersTable();
   </script>
 </body>
 </html>
