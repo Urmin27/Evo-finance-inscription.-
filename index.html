@@ -148,7 +148,6 @@
           <th>Nom d'utilisateur</th>
           <th>E-mail</th>
           <th>Montant déposé</th>
-          <th>Montant retiré</th>
         </tr>
       </thead>
       <tbody id="users-tbody">
@@ -243,7 +242,7 @@
     
     // Copier le lien d'inscription
     document.getElementById("copy-link-btn").addEventListener("click", () => {
-      const link = window.location.origin + window.location.pathname + "?inscription=1";
+      const link = window.location.origin + window.location.pathname + "?inscription=1&ref=" + Math.floor(100000 + Math.random() * 900000).toString();
       navigator.clipboard.writeText(link).then(() => {
         alert("Lien copié: " + link);
       });
@@ -344,17 +343,14 @@
         const userData = userDoc.data();
         const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
         let depositAmount = 0;
-        let withdrawalAmount = 0;
         if (balanceSnap.exists()) {
           depositAmount = balanceSnap.data().soldeDepot || 0;
-          withdrawalAmount = balanceSnap.data().soldeRetrait || 0;
         }
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${userData.nom || "Inconnu"}</td>
           <td>${userData.email}</td>
           <td>${depositAmount}$</td>
-          <td>${withdrawalAmount}$</td>
         `;
         document.getElementById("users-tbody").appendChild(tr);
       }
@@ -403,4 +399,4 @@
     
   </script>
 </body>
-        </html>
+  </html>
