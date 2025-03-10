@@ -21,7 +21,8 @@
       border-bottom: 4px solid #ff99cc;
     }
     header h1 { font-size: 2.5rem; color: #cc0066; }
-    /* Formulaire */
+    
+    /* Formulaire d'inscription */
     form {
       background: #fff;
       padding: 20px;
@@ -45,6 +46,8 @@
       border-radius: 5px;
     }
     form input:focus { border-color: #cc0066; }
+    
+    /* Bokotra */
     button {
       background-color: #ff99cc;
       border: none;
@@ -57,6 +60,7 @@
       margin: 10px auto;
     }
     button:hover { background-color: #cc0066; transform: scale(1.05); }
+    
     .hidden { display: none; }
     .notification {
       position: fixed;
@@ -67,39 +71,31 @@
       padding: 10px;
       border-radius: 5px;
     }
-    /* Faritra miseho rehefa tsy misy query param inscription=1 */
+    
+    /* Faritra miseho raha tsy misy query param inscription=1 */
     #copy-message {
       text-align: center;
       margin: 20px;
       color: #cc0066;
     }
-    /* Tabilao referral codes */
-    #referral-table, #users-table {
+    
+    /* Tabilao lisitry ny mpampiasa (teams) – tsy misy code référal */
+    #users-table {
       width: 90%;
       max-width: 800px;
       margin: 20px auto;
       border-collapse: collapse;
     }
-    #referral-table th, #referral-table td, #users-table th, #users-table td {
+    #users-table th, #users-table td {
       border: 2px solid #ff99cc;
       padding: 8px;
       text-align: center;
     }
-    #referral-table th, #users-table th {
+    #users-table th {
       background-color: #ffe6ff;
       color: #cc0066;
     }
-    .copy-code-btn {
-      background-color: #ff99cc;
-      border: none;
-      color: #fff;
-      padding: 5px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: background-color 0.3s;
-    }
-    .copy-code-btn:hover { background-color: #cc0066; }
+    
     /* Bokotra Connectez-vous */
     .login-button {
       background-color: #ff99cc;
@@ -121,27 +117,11 @@
     <h1>Inscription EVO Finance</h1>
   </header>
   
-  <!-- Faritra ho an'ny olona tsy miditra amin'ny lien inscription (copy-message) -->
+  <!-- Faritra ho an'ny olona tsy miditra amin'ny lien inscription -->
   <div id="copy-message" class="hidden">
-    <p>Veuillez utiliser le lien d'inscription copié pour accéder à ce formulaire.</p>
+    <p>Veuillez copier le lien d'inscription pour accéder à ce formulaire.</p>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
-    
-    <!-- Lisitry ny code référal ho an'ny mpampiasa tsirairay -->
-    <h2 style="margin-top:30px; color:#cc0066;">Liste des Codes Référal</h2>
-    <table id="referral-table">
-      <thead>
-        <tr>
-          <th>Nom d'utilisateur</th>
-          <th>Code Référal</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="referral-tbody">
-        <!-- Andalana avy amin'ny Firebase -->
-      </tbody>
-    </table>
-    
-    <!-- Tabilao mivaingana ho an'ny lisitry ny mpampiasa (tsy misy code référal) -->
+    <!-- Aseho eto ny tabilao lisitry ny mpampiasa (teams) -->
     <h2 style="margin-top:30px; color:#cc0066;">Liste des Utilisateurs</h2>
     <table id="users-table">
       <thead>
@@ -152,12 +132,12 @@
         </tr>
       </thead>
       <tbody id="users-tbody">
-        <!-- Andalana avy amin'ny Firebase -->
+        <!-- Andalana avy amin'ny Firestore -->
       </tbody>
     </table>
   </div>
   
-  <!-- Faritra ho an'ny formulaire d'inscription (rehefa misy query param inscription=1) -->
+  <!-- Faritra ho an'ny formulaire d'inscription (rehefa misy ?inscription=1) -->
   <div id="registration-container" class="hidden">
     <form id="registration-form">
       <h2>Formulaire d'inscription</h2>
@@ -198,12 +178,13 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Check raha misy query param inscription=1
+    // Fampisehoana araka ny URL: raha misy ?inscription=1 aseho ny formulaire, raha tsy dia aseho ny copy-message + tabilao users
     function checkRegistrationLink() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
+        // Raha misy referral code ao amin'ny URL, pre-rempli sy disable ilay saha
         if (params.get("ref")) {
           const refCode = params.get("ref");
           document.getElementById("reg-referral").value = refCode;
@@ -212,7 +193,6 @@
       } else {
         document.getElementById("registration-container").classList.add("hidden");
         document.getElementById("copy-message").classList.remove("hidden");
-        loadReferralTable();
         loadUsersTable();
       }
     }
@@ -226,7 +206,7 @@
       });
     });
     
-    // Bouton Connectez-vous: redirecte any amin'ny pejy connexion
+    // Bouton Connectez-vous: redirecte amin'ny pejy connexion
     document.getElementById("login-btn").addEventListener("click", () => {
       window.location.href = "connection.html"; // Ovay araka ny URL anao
     });
@@ -245,7 +225,7 @@
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        // Génération automatique ny code référal ho an'ny mpampiasa (6 chiffres)
+        // Génération automatique ny code référal (6 chiffres)
         const userReferralCode = Math.floor(100000 + Math.random() * 900000).toString();
         await setDoc(doc(db, "utilisateurs", user.uid), {
           email,
@@ -273,28 +253,18 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load referral codes table
-    async function loadReferralTable() {
-      const tbody = document.getElementById("referral-tbody");
-      tbody.innerHTML = "";
-      const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
-      const usersSnapshot = await getDocs(q);
-      for (const userDoc of usersSnapshot.docs) {
-        const userData = userDoc.data();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${userData.nom || "Inconnu"}</td>
-          <td>${userData.referralCode || ""}</td>
-          <td><button class="copy-code-btn" onclick="copyReferralCode('${userData.referralCode}')">Copier</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
-    }
-    
-    // Load users info table (Nom, E-mail, Montant déposé)
+    // Load lisitry ny mpampiasa ao amin'ny tabilao (tsy misy code référal)
     async function loadUsersTable() {
       const tbody = document.getElementById("users-tbody");
-      tbody.innerHTML = "";
+      // Raha tsy misy tbody, mamorona azy
+      if (!tbody) {
+        const table = document.getElementById("users-table");
+        const newTbody = document.createElement("tbody");
+        newTbody.id = "users-tbody";
+        table.appendChild(newTbody);
+      }
+      document.getElementById("users-tbody").innerHTML = "";
+      
       const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
       const usersSnapshot = await getDocs(q);
       for (const userDoc of usersSnapshot.docs) {
@@ -310,15 +280,8 @@
           <td>${userData.email}</td>
           <td>${depositAmount}$</td>
         `;
-        tbody.appendChild(tr);
+        document.getElementById("users-tbody").appendChild(tr);
       }
-    }
-    
-    window.copyReferralCode = function(code) {
-      if (!code) return;
-      navigator.clipboard.writeText(code).then(() => {
-        showNotification("Code copié: " + code);
-      });
     }
   </script>
 </body>
