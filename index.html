@@ -226,10 +226,11 @@
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
+        // Raha misy paramètre "ref" ao amin'ny URL, dia mipetraka automatique ilay code ao amin'ny champ "Code Référal"
         if (params.get("ref")) {
           const refCode = params.get("ref");
           document.getElementById("reg-referral").value = refCode;
-          document.getElementById("reg-referral").disabled = true;
+          document.getElementById("reg-referral").disabled = true; // Tsy azo ovaina ilay champ
         }
       } else {
         document.getElementById("registration-container").classList.add("hidden");
@@ -402,4 +403,4 @@
     
   </script>
 </body>
-        </html>
+                                        </html>
