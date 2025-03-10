@@ -7,7 +7,11 @@
   <style>
     /* Style dessin animé miaraka amin'ny Comic Neue */
     @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Comic Neue', sans-serif;
       background: linear-gradient(135deg, #ffccff, #cceeff);
@@ -20,7 +24,10 @@
       background-color: #ffe6ff;
       border-bottom: 4px solid #ff99cc;
     }
-    header h1 { font-size: 2.5rem; color: #cc0066; }
+    header h1 {
+      font-size: 2.5rem;
+      color: #cc0066;
+    }
     form {
       background: #fff;
       padding: 20px;
@@ -28,6 +35,11 @@
       max-width: 500px;
       margin: 20px auto;
       box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+    }
+    form h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #cc0066;
     }
     form label {
       display: block;
@@ -42,7 +54,9 @@
       border: 2px solid #ff99cc;
       border-radius: 5px;
     }
-    form input:focus { border-color: #cc0066; }
+    form input:focus {
+      border-color: #cc0066;
+    }
     button {
       background-color: #ff99cc;
       border: none;
@@ -51,9 +65,16 @@
       border-radius: 25px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.3s;
+      display: block;
+      margin: 10px auto;
     }
-    button:hover { background-color: #cc0066; transform: scale(1.05); }
-    .hidden { display: none; }
+    button:hover {
+      background-color: #cc0066;
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
     .notification {
       position: fixed;
       top: 20px;
@@ -63,34 +84,28 @@
       padding: 10px;
       border-radius: 5px;
     }
-    /* Style lisitra des équipes sy utilisateurs */
-    .teams-container, .users-container {
-      max-width: 600px;
-      margin: 20px auto;
-    }
-    .list-title {
-      text-align: center;
-      color: #cc0066;
-      margin-bottom: 10px;
-    }
-    .list-item {
-      background: #fff;
-      border: 2px solid #ff99cc;
-      padding: 8px;
-      margin: 5px;
-      border-radius: 5px;
-    }
-    .totaux {
-      text-align: center;
-      margin: 10px;
-      font-weight: bold;
-      color: #cc0066;
-    }
-    /* Style ho an'ny message sy bouton copy lien d'inscription */
+    /* Style hafatra raha tsy miditra amin'ny lien inscription */
     #copy-message {
       text-align: center;
       margin: 20px;
       color: #cc0066;
+    }
+    /* Bokotra Connectez-vous */
+    .login-button {
+      background-color: #ff99cc;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      max-width: 200px;
+      margin: 20px auto;
+      display: block;
+    }
+    .login-button:hover {
+      background-color: #cc0066;
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -99,47 +114,35 @@
     <h1>Inscription EVO Finance</h1>
   </header>
   
-  <!-- Raha tsy misy ?inscription=1 dia haseho hafatra fotsiny -->
+  <!-- Raha tsy misy ?inscription=1 ao amin'ny URL, aseho ilay hafatra miaraka amin'ny bouton "Copier le lien d'inscription" -->
   <div id="copy-message" class="hidden">
     Veuillez utiliser le lien d'inscription copié pour accéder à ce formulaire.
     <br>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
   </div>
   
-  <!-- Formulaire d'inscription -->
+  <!-- Formulaire d'inscription (haseho raha misy ?inscription=1) -->
   <div id="registration-container" class="hidden">
     <form id="registration-form">
       <h2>Formulaire d'inscription</h2>
       <label for="reg-email">E-mail :</label>
       <input type="email" id="reg-email" required>
-      <label for="reg-cin">Numero de CIN :</label>
-      <input type="text" id="reg-cin" required>
+      
       <label for="reg-nom">Nom complet :</label>
       <input type="text" id="reg-nom" required>
+      
       <label for="reg-password">Mot de passe :</label>
       <input type="password" id="reg-password" required>
-      <label for="reg-referral">Code Referal (optionnel) :</label>
-      <input type="text" id="reg-referral" placeholder="Entrez le code referal si vous en avez un">
-      <label for="reg-team">Nom de votre équipe :</label>
-      <input type="text" id="reg-team" placeholder="Votre équipe">
+      
+      <label for="reg-referral">Code Référal (optionnel) :</label>
+      <!-- Raha misy referral code ao amin'ny URL, dia pre-rempli sy disable -->
+      <input type="text" id="reg-referral" placeholder="6 chiffres" maxlength="6">
+      
       <button type="submit">S'inscrire</button>
     </form>
+    <!-- Bouton Connectez-vous ho an'ny olona efa manana compte -->
+    <button class="login-button" id="login-btn">Connectez-vous</button>
   </div>
-  
-  <!-- Section lisitra des utilisateurs -->
-  <section id="users-section">
-    <h2>Liste des Utilisateurs</h2>
-    <div class="users-container">
-      <div id="deposited-users-container">
-        <h3 class="list-title">Utilisateurs avec dépôt (<span id="deposited-total">0</span>)</h3>
-        <div id="deposited-users"></div>
-      </div>
-      <div id="not-deposited-users-container">
-        <h3 class="list-title">Utilisateurs sans dépôt (<span id="not-deposited-total">0</span>)</h3>
-        <div id="not-deposited-users"></div>
-      </div>
-    </div>
-  </section>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
@@ -160,12 +163,18 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Fampisehoana formulaire raha URL misy ?inscription=1
+    // Vérifier raha misy query parameter inscription=1
     function checkRegistrationLink() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
+        // Raha misy referral code (ex: ?ref=123456)
+        if (params.get("ref")) {
+          const refCode = params.get("ref");
+          document.getElementById("reg-referral").value = refCode;
+          document.getElementById("reg-referral").disabled = true;
+        }
       } else {
         document.getElementById("registration-container").classList.add("hidden");
         document.getElementById("copy-message").classList.remove("hidden");
@@ -173,7 +182,7 @@
     }
     checkRegistrationLink();
     
-    // Copy lien d'inscription
+    // Copier le lien d'inscription
     document.getElementById("copy-link-btn").addEventListener("click", () => {
       const link = window.location.origin + window.location.pathname + "?inscription=1";
       navigator.clipboard.writeText(link).then(() => {
@@ -181,41 +190,46 @@
       });
     });
     
+    // Bouton Connectez-vous: redirecte amin'ny pejy connection (ohatra: connection.html)
+    document.getElementById("login-btn").addEventListener("click", () => {
+      window.location.href = "connection.html"; // Ataovy mifanaraka amin'ny URL anao
+    });
+    
     // Formulaire d'inscription
     document.getElementById("registration-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("reg-email").value.trim();
-      const cin = document.getElementById("reg-cin").value.trim();
       const nom = document.getElementById("reg-nom").value.trim();
       const password = document.getElementById("reg-password").value;
-      const referralInput = document.getElementById("reg-referral").value.trim();
-      const team = document.getElementById("reg-team").value.trim();
+      // Referral code: raha voasoratra, dia tokony ho 6 chiffres, raha tsy dia null
+      let referralInput = document.getElementById("reg-referral").value.trim();
+      if (referralInput && !/^\d{6}$/.test(referralInput)) {
+        showNotification("Le code référal doit être composé de 6 chiffres.");
+        return;
+      }
       
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Generate referral code unique (ohatra, REF + 6 dernière lettre de uid)
-        const referralCode = "REF-" + user.uid.slice(-6).toUpperCase();
+        // Generate referral code for the new user: 6-digit random number
+        const userReferralCode = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Save user data ao amin'ny "utilisateurs"
+        // Enregistrer les angona ao amin'ny "utilisateurs"
         await setDoc(doc(db, "utilisateurs", user.uid), {
           email,
-          cin,
           nom,
-          team: team || "Sans équipe",
-          referralCode: referralCode,
-          referrer: referralInput || null,
+          referralCode: userReferralCode,  // Ny code ho an'ny tenany
+          referrer: referralInput || null,  // Raha nisy referral code nampidirina
           verified: false,
           timestamp: new Date()
         });
         
-        // Initialize balance document
+        // Initialize balance
         await setDoc(doc(db, "balances", user.uid), { soldeDepot: 0, soldeGains: 0 });
         
-        showNotification("Inscription réussie. Votre code referral: " + referralCode);
+        showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
         document.getElementById("registration-form").reset();
-        loadUsers();
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
@@ -230,44 +244,6 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load lisitra des utilisateurs: misafidy ireo efa nanao dépôt sy tsy nanao dépôt
-    async function loadUsers() {
-      const depositedList = document.getElementById("deposited-users");
-      const notDepositedList = document.getElementById("not-deposited-users");
-      depositedList.innerHTML = "";
-      notDepositedList.innerHTML = "";
-      let depositedCount = 0;
-      let notDepositedCount = 0;
-      
-      const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
-      for (const userDoc of usersSnapshot.docs) {
-        const userData = userDoc.data();
-        // Fetch balance document
-        const balanceDoc = await getDoc(doc(db, "balances", userDoc.id));
-        let depositMade = false;
-        let depositAmount = 0;
-        if (balanceDoc.exists()) {
-          const balanceData = balanceDoc.data();
-          depositAmount = balanceData.soldeDepot || 0;
-          if (depositAmount > 0) depositMade = true;
-        }
-        const userItem = document.createElement("div");
-        userItem.className = "list-item";
-        userItem.innerHTML = `<strong>${userData.nom}</strong> (${userData.email}) - Dépôt: ${depositAmount}$`;
-        if (depositMade) {
-          depositedList.appendChild(userItem);
-          depositedCount++;
-        } else {
-          notDepositedList.appendChild(userItem);
-          notDepositedCount++;
-        }
-      }
-      document.getElementById("deposited-total").innerText = depositedCount;
-      document.getElementById("not-deposited-total").innerText = notDepositedCount;
-    }
-    
-    // Initial load of users after inscription (and reload après inscription)
-    loadUsers();
   </script>
 </body>
 </html>
