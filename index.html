@@ -339,21 +339,30 @@
       document.getElementById("users-tbody").innerHTML = "";
       const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
       const usersSnapshot = await getDocs(q);
+      const uniqueUsers = new Map(); // Mampiasa Map mba hanavahana ny mpampiasa miverina
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
-        const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
-        let depositAmount = 0;
-        if (balanceSnap.exists()) {
-          depositAmount = balanceSnap.data().soldeDepot || 0;
+        const email = userData.email;
+        // Raha tsy efa ao amin'ny Map ilay email, dia ampidirina
+        if (!uniqueUsers.has(email)) {
+          const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
+          let depositAmount = 0;
+          if (balanceSnap.exists()) {
+            depositAmount = balanceSnap.data().soldeDepot || 0;
+          }
+          uniqueUsers.set(email, { nom: userData.nom, email: userData.email, depositAmount });
         }
+      }
+      // Mamorona ny tabilao avy amin'ny Map
+      uniqueUsers.forEach((user) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${userData.nom || "Inconnu"}</td>
-          <td>${userData.email}</td>
-          <td>${depositAmount}$</td>
+          <td>${user.nom || "Inconnu"}</td>
+          <td>${user.email}</td>
+          <td>${user.depositAmount}$</td>
         `;
         document.getElementById("users-tbody").appendChild(tr);
-      }
+      });
     }
     
     // Load summary momba ny équipes: 
