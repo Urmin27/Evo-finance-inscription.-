@@ -29,7 +29,11 @@
       margin: 20px auto;
       box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
     }
-    form h2 { text-align: center; margin-bottom: 15px; color: #cc0066; }
+    form h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #cc0066;
+    }
     form label {
       display: block;
       margin-bottom: 5px;
@@ -66,7 +70,7 @@
       padding: 10px;
       border-radius: 5px;
     }
-    /* Style hafatra raha tsy miditra amin'ny lien inscription */
+    /* Hafatra raha tsy miditra amin'ny lien inscription */
     #copy-message {
       text-align: center;
       margin: 20px;
@@ -89,29 +93,34 @@
       background-color: #cc0066;
       transform: scale(1.05);
     }
-    /* Lisitra des équipes */
-    .teams-container {
-      max-width: 600px;
+    /* Tabilao lisitry ny mpampiasa */
+    #users-table {
+      width: 90%;
+      max-width: 800px;
       margin: 20px auto;
+      border-collapse: collapse;
     }
-    .list-title {
-      text-align: center;
-      color: #cc0066;
-      margin-bottom: 10px;
-    }
-    .team-item {
-      background: #fff;
+    #users-table th, #users-table td {
       border: 2px solid #ff99cc;
       padding: 8px;
-      margin: 5px;
-      border-radius: 5px;
-    }
-    .totaux {
       text-align: center;
-      margin: 10px;
-      font-weight: bold;
+    }
+    #users-table th {
+      background-color: #ffe6ff;
       color: #cc0066;
     }
+    /* Bokotra hifandraisana amin'ny code invitation */
+    .copy-code-btn {
+      background-color: #ff99cc;
+      border: none;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background-color 0.3s;
+    }
+    .copy-code-btn:hover { background-color: #cc0066; }
   </style>
 </head>
 <body>
@@ -119,14 +128,14 @@
     <h1>Inscription EVO Finance</h1>
   </header>
   
-  <!-- Hafatra ho an'ny olona tsy miatrika ny lien inscription -->
+  <!-- Raha tsy misy query parameter inscription=1, aseho ny hafatra copy lien -->
   <div id="copy-message" class="hidden">
     Veuillez utiliser le lien d'inscription copié pour accéder à ce formulaire.
     <br>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
   </div>
   
-  <!-- Formulaire d'inscription sy lisitra des équipes -->
+  <!-- Formulaire d'inscription sy tabilao mpampiasa -->
   <div id="registration-container" class="hidden">
     <form id="registration-form">
       <h2>Formulaire d'inscription</h2>
@@ -140,7 +149,7 @@
       <input type="password" id="reg-password" required>
       
       <label for="reg-referral">Code Référal (optionnel) :</label>
-      <!-- Raha misy referral code ao amin'ny URL, dia pre-rempli sy disable -->
+      <!-- Raha misy referral code ao amin'ny URL, pre-rempli ary disable -->
       <input type="text" id="reg-referral" placeholder="6 chiffres" maxlength="6">
       
       <button type="submit">S'inscrire</button>
@@ -149,25 +158,26 @@
     <!-- Bouton Connectez-vous -->
     <button class="login-button" id="login-btn">Connectez-vous</button>
     
-    <!-- Lisitra des équipes -->
-    <section id="teams-section">
-      <h2>Liste des Équipes</h2>
-      <div class="teams-container">
-        <div id="validated-teams">
-          <h3 class="list-title">Équipes Validées (<span id="validated-total">0</span>)</h3>
-          <!-- Équipes validées -->
-        </div>
-        <div id="nonvalidated-teams">
-          <h3 class="list-title">Équipes Non Validées (<span id="nonvalidated-total">0</span>)</h3>
-          <!-- Équipes non validées -->
-        </div>
-      </div>
-    </section>
+    <!-- Tabilao lisitry ny mpampiasa (Nom, E-mail, Montant déposé, Code Invitation) -->
+    <h2 style="text-align: center; color: #cc0066; margin-top: 30px;">Liste des Utilisateurs</h2>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>Nom d'utilisateur</th>
+          <th>E-mail</th>
+          <th>Montant déposé</th>
+          <th>Code Invitation</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        <!-- Ireo andalana dia hosoratana avy ao amin'ny Firestore -->
+      </tbody>
+    </table>
   </div>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, setDoc, getDoc, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
     
     const firebaseConfig = {
@@ -184,13 +194,13 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     
-    // Raha tsy misy ?inscription=1 ao amin'ny URL, dia haseho ny hafatra misy bouton copy
+    // Raha tsy misy query parameter inscription=1, aseho ny hafatra copy lien
     function checkRegistrationLink() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("inscription") === "1") {
         document.getElementById("registration-container").classList.remove("hidden");
         document.getElementById("copy-message").classList.add("hidden");
-        // Raha misy referral code, pre-rempli ary disable ilay saha
+        // Raha misy referral code ao amin'ny URL, pre-rempli ary disable
         if (params.get("ref")) {
           const refCode = params.get("ref");
           document.getElementById("reg-referral").value = refCode;
@@ -211,7 +221,7 @@
       });
     });
     
-    // Bouton Connectez-vous (redirecte amin'ny pejy connection)
+    // Bouton Connectez-vous: redirecte amin'ny pejy connection
     document.getElementById("login-btn").addEventListener("click", () => {
       window.location.href = "connection.html"; // Ovay araka ny URL anao
     });
@@ -227,10 +237,12 @@
         showNotification("Le code référal doit être composé de 6 chiffres.");
         return;
       }
+      
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        // Génération automatique ny code référal (6 chiffres)
+        
+        // Génération automatique ny code référal ho an'ny mpampiasa (6 chiffres)
         const userReferralCode = Math.floor(100000 + Math.random() * 900000).toString();
         
         // Enregistrement ny angona ao amin'ny "utilisateurs"
@@ -240,9 +252,7 @@
           referralCode: userReferralCode,
           referrer: referralInput || null,
           verified: false,
-          timestamp: new Date(),
-          // Raha tianao, azonao asiana "team" default
-          team: "Sans équipe"
+          timestamp: new Date()
         });
         
         // Initialize balance
@@ -250,7 +260,7 @@
         
         showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
         document.getElementById("registration-form").reset();
-        loadTeams();
+        loadUsersTable();
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
@@ -265,72 +275,47 @@
       setTimeout(() => { notif.remove(); }, 3000);
     }
     
-    // Load lisitra des équipes avy amin'ny collection "utilisateurs"
-    async function loadTeams() {
-      const validatedTeamsDiv = document.getElementById("validated-teams");
-      const nonValidatedTeamsDiv = document.getElementById("nonvalidated-teams");
-      validatedTeamsDiv.innerHTML = "<h3 class='list-title'>Équipes Validées (<span id='validated-total'>0</span>)</h3>";
-      nonValidatedTeamsDiv.innerHTML = "<h3 class='list-title'>Équipes Non Validées (<span id='nonvalidated-total'>0</span>)</h3>";
+    // Load lisitry ny mpampiasa miaraka amin'ny balance (soldeDepot)
+    async function loadUsersTable() {
+      const tbody = document.getElementById("users-tbody");
+      tbody.innerHTML = "";
       
-      const teams = {}; // format: { teamName: { members: [...], validated: boolean } }
+      // Retrieve all users, sorted by timestamp desc (recent first)
+      const q = query(collection(db, "utilisateurs"), orderBy("timestamp", "desc"));
+      const usersSnapshot = await getDocs(q);
       
-      const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
-        // Ampiasao ny saha "team" raha misy, raha tsy dia "Sans équipe"
-        const teamName = userData.team || "Sans équipe";
-        if (!teams[teamName]) {
-          teams[teamName] = { members: [], validated: false };
+        // Retrieve balance for this user
+        const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
+        let depositAmount = 0;
+        if (balanceSnap.exists()) {
+          depositAmount = balanceSnap.data().soldeDepot || 0;
         }
-        teams[teamName].members.push(userData.nom || "Inconnu");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${userData.nom || "Inconnu"}</td>
+          <td>${userData.email}</td>
+          <td>${depositAmount}$</td>
+          <td>
+            ${userData.referralCode || ""}
+            <button class="copy-code-btn" onclick="copyReferralCode('${userData.referralCode}')">Copier</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       }
-      
-      // Mamaky balances mba hanamarinana raha misy dépôt (soldeDepot > 0) isaky ny mpikambana
-      for (const teamName in teams) {
-        const members = teams[teamName].members;
-        // Fandikana: raha misy mpampiasa amin'io ekipa io manana dépôt > 0, dia ekipa validée
-        let validated = false;
-        // Miverina amin'ny collection "balances" isaky ny mpampiasa an'ny ekipa
-        const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
-        for (const userDoc of usersSnapshot.docs) {
-          const userData = userDoc.data();
-          const uTeam = userData.team || "Sans équipe";
-          if (uTeam === teamName) {
-            const balanceSnap = await getDoc(doc(db, "balances", userDoc.id));
-            if (balanceSnap.exists()) {
-              const balanceData = balanceSnap.data();
-              if (balanceData.soldeDepot && balanceData.soldeDepot > 0) {
-                validated = true;
-                break;
-              }
-            }
-          }
-        }
-        teams[teamName].validated = validated;
-      }
-      
-      // Asehoy ny lisitra ary fanisana total
-      let validatedCount = 0;
-      let nonValidatedCount = 0;
-      for (const teamName in teams) {
-        const teamItem = document.createElement("div");
-        teamItem.className = "team-item";
-        teamItem.innerHTML = `<strong>${teamName}</strong> : ${teams[teamName].members.join(", ")}`;
-        if (teams[teamName].validated) {
-          validatedTeamsDiv.appendChild(teamItem);
-          validatedCount++;
-        } else {
-          nonValidatedTeamsDiv.appendChild(teamItem);
-          nonValidatedCount++;
-        }
-      }
-      document.getElementById("validated-total").innerText = validatedCount;
-      document.getElementById("nonvalidated-total").innerText = nonValidatedCount;
     }
     
-    // Initial load of teams
-    loadTeams();
+    // Function hanovàna ny code referral ao anaty clipboard
+    window.copyReferralCode = function(code) {
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        showNotification("Code copié: " + code);
+      });
+    }
     
+    // Initial load of table rehefa miditra
+    loadUsersTable();
   </script>
 </body>
 </html>
