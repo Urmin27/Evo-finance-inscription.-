@@ -183,11 +183,28 @@
     
     <button class="login-button" id="login-btn">Connectez-vous</button>
   </div>
+
+  <!-- Formulaire de connexion -->
+  <div id="login-container" class="hidden">
+    <form id="login-form">
+      <h2>Connexion</h2>
+      <label for="login-email">E-mail :</label>
+      <input type="email" id="login-email" required>
+      
+      <label for="login-password">Mot de passe :</label>
+      <input type="password" id="login-password" required>
+      
+      <button type="submit">Se connecter</button>
+      <p style="text-align: center; margin-top: 10px;">
+        <a href="#" id="forgot-password">Mot de passe oublié ?</a>
+      </p>
+    </form>
+  </div>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
     import { getFirestore, collection, addDoc, doc, setDoc, getDoc, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyDbAk8VyG7gfzmmFAFLAnUtUi1XrSNrQQQ",
@@ -231,9 +248,10 @@
       });
     });
     
-    // Bouton Connectez-vous: redirecte any amin'ny pejy connexion
+    // Bouton Connectez-vous: Asehoy ny formulaire de connexion
     document.getElementById("login-btn").addEventListener("click", () => {
-      window.location.href = "connection.html"; // Ovay araka ny URL anao
+      document.getElementById("registration-container").classList.add("hidden");
+      document.getElementById("login-container").classList.remove("hidden");
     });
     
     // Formulaire d'inscription
@@ -267,6 +285,37 @@
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
+      }
+    });
+    
+    // Formulaire de connexion
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        showNotification("Connexion réussie !");
+        // Redirection vers la page d'accueil après connexion
+        window.location.href = "accueil.html"; // Ovay araka ny URL anao
+      } catch (error) {
+        console.error("Erreur lors de la connexion: ", error);
+        showNotification("Erreur: " + error.message);
+      }
+    });
+    
+    // Mot de passe oublié
+    document.getElementById("forgot-password").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = prompt("Entrez votre adresse e-mail pour réinitialiser votre mot de passe:");
+      if (email) {
+        try {
+          await sendPasswordResetEmail(auth, email);
+          showNotification("Un e-mail de réinitialisation a été envoyé.");
+        } catch (error) {
+          console.error("Erreur lors de l'envoi de l'e-mail: ", error);
+          showNotification("Erreur: " + error.message);
+        }
       }
     });
     
@@ -353,4 +402,4 @@
     
   </script>
 </body>
-</html>
+        </html>
