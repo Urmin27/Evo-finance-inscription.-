@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="mg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription EVO Finance</title>
+  <style>
+    /* Style dessin animé miaraka amin'ny Comic Neue */
+    @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Comic Neue', sans-serif;
+      background: linear-gradient(135deg, #ffccff, #cceeff);
+      color: #333;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background-color: #ffe6ff;
+      border-bottom: 4px solid #ff99cc;
+    }
+    header h1 { font-size: 2.5rem; color: #cc0066; }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: 20px auto;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+    }
+    form label {
+      display: block;
+      margin-bottom: 5px;
+      color: #cc0066;
+      font-weight: bold;
+    }
+    form input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 2px solid #ff99cc;
+      border-radius: 5px;
+    }
+    form input:focus { border-color: #cc0066; }
+    button {
+      background-color: #ff99cc;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    button:hover { background-color: #cc0066; transform: scale(1.05); }
+    .hidden { display: none; }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #cc0066;
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    /* Style lisitra des équipes sy utilisateurs */
+    .teams-container, .users-container {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    .list-title {
+      text-align: center;
+      color: #cc0066;
+      margin-bottom: 10px;
+    }
+    .list-item {
+      background: #fff;
+      border: 2px solid #ff99cc;
+      padding: 8px;
+      margin: 5px;
+      border-radius: 5px;
+    }
+    .totaux {
+      text-align: center;
+      margin: 10px;
+      font-weight: bold;
+      color: #cc0066;
+    }
+    /* Style ho an'ny message sy bouton copy lien d'inscription */
+    #copy-message {
+      text-align: center;
+      margin: 20px;
+      color: #cc0066;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Inscription EVO Finance</h1>
+  </header>
+  
+  <!-- Raha tsy misy ?inscription=1 dia haseho hafatra fotsiny -->
+  <div id="copy-message" class="hidden">
+    Veuillez utiliser le lien d'inscription copié pour accéder à ce formulaire.
+    <br>
+    <button id="copy-link-btn">Copier le lien d'inscription</button>
+  </div>
+  
+  <!-- Formulaire d'inscription -->
+  <div id="registration-container" class="hidden">
+    <form id="registration-form">
+      <h2>Formulaire d'inscription</h2>
+      <label for="reg-email">E-mail :</label>
+      <input type="email" id="reg-email" required>
+      <label for="reg-cin">Numero de CIN :</label>
+      <input type="text" id="reg-cin" required>
+      <label for="reg-nom">Nom complet :</label>
+      <input type="text" id="reg-nom" required>
+      <label for="reg-password">Mot de passe :</label>
+      <input type="password" id="reg-password" required>
+      <label for="reg-referral">Code Referal (optionnel) :</label>
+      <input type="text" id="reg-referral" placeholder="Entrez le code referal si vous en avez un">
+      <label for="reg-team">Nom de votre équipe :</label>
+      <input type="text" id="reg-team" placeholder="Votre équipe">
+      <button type="submit">S'inscrire</button>
+    </form>
+  </div>
+  
+  <!-- Section lisitra des utilisateurs -->
+  <section id="users-section">
+    <h2>Liste des Utilisateurs</h2>
+    <div class="users-container">
+      <div id="deposited-users-container">
+        <h3 class="list-title">Utilisateurs avec dépôt (<span id="deposited-total">0</span>)</h3>
+        <div id="deposited-users"></div>
+      </div>
+      <div id="not-deposited-users-container">
+        <h3 class="list-title">Utilisateurs sans dépôt (<span id="not-deposited-total">0</span>)</h3>
+        <div id="not-deposited-users"></div>
+      </div>
+    </div>
+  </section>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbAk8VyG7gfzmmFAFLAnUtUi1XrSNrQQQ",
+      authDomain: "evo-finance-service.firebaseapp.com",
+      projectId: "evo-finance-service",
+      storageBucket: "evo-finance-service.appspot.com",
+      messagingSenderId: "231632509264",
+      appId: "1:231632509264:web:03cf6b9e2ef75a4f7bb455",
+      measurementId: "G-2561NK5LL8"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    
+    // Fampisehoana formulaire raha URL misy ?inscription=1
+    function checkRegistrationLink() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("inscription") === "1") {
+        document.getElementById("registration-container").classList.remove("hidden");
+        document.getElementById("copy-message").classList.add("hidden");
+      } else {
+        document.getElementById("registration-container").classList.add("hidden");
+        document.getElementById("copy-message").classList.remove("hidden");
+      }
+    }
+    checkRegistrationLink();
+    
+    // Copy lien d'inscription
+    document.getElementById("copy-link-btn").addEventListener("click", () => {
+      const link = window.location.origin + window.location.pathname + "?inscription=1";
+      navigator.clipboard.writeText(link).then(() => {
+        alert("Lien copié: " + link);
+      });
+    });
+    
+    // Formulaire d'inscription
+    document.getElementById("registration-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("reg-email").value.trim();
+      const cin = document.getElementById("reg-cin").value.trim();
+      const nom = document.getElementById("reg-nom").value.trim();
+      const password = document.getElementById("reg-password").value;
+      const referralInput = document.getElementById("reg-referral").value.trim();
+      const team = document.getElementById("reg-team").value.trim();
+      
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Generate referral code unique (ohatra, REF + 6 dernière lettre de uid)
+        const referralCode = "REF-" + user.uid.slice(-6).toUpperCase();
+        
+        // Save user data ao amin'ny "utilisateurs"
+        await setDoc(doc(db, "utilisateurs", user.uid), {
+          email,
+          cin,
+          nom,
+          team: team || "Sans équipe",
+          referralCode: referralCode,
+          referrer: referralInput || null,
+          verified: false,
+          timestamp: new Date()
+        });
+        
+        // Initialize balance document
+        await setDoc(doc(db, "balances", user.uid), { soldeDepot: 0, soldeGains: 0 });
+        
+        showNotification("Inscription réussie. Votre code referral: " + referralCode);
+        document.getElementById("registration-form").reset();
+        loadUsers();
+      } catch (error) {
+        console.error("Erreur lors de l'inscription: ", error);
+        showNotification("Erreur: " + error.message);
+      }
+    });
+    
+    function showNotification(message) {
+      const notif = document.createElement("div");
+      notif.className = "notification";
+      notif.innerText = message;
+      document.body.appendChild(notif);
+      setTimeout(() => { notif.remove(); }, 3000);
+    }
+    
+    // Load lisitra des utilisateurs: misafidy ireo efa nanao dépôt sy tsy nanao dépôt
+    async function loadUsers() {
+      const depositedList = document.getElementById("deposited-users");
+      const notDepositedList = document.getElementById("not-deposited-users");
+      depositedList.innerHTML = "";
+      notDepositedList.innerHTML = "";
+      let depositedCount = 0;
+      let notDepositedCount = 0;
+      
+      const usersSnapshot = await getDocs(collection(db, "utilisateurs"));
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        // Fetch balance document
+        const balanceDoc = await getDoc(doc(db, "balances", userDoc.id));
+        let depositMade = false;
+        let depositAmount = 0;
+        if (balanceDoc.exists()) {
+          const balanceData = balanceDoc.data();
+          depositAmount = balanceData.soldeDepot || 0;
+          if (depositAmount > 0) depositMade = true;
+        }
+        const userItem = document.createElement("div");
+        userItem.className = "list-item";
+        userItem.innerHTML = `<strong>${userData.nom}</strong> (${userData.email}) - Dépôt: ${depositAmount}$`;
+        if (depositMade) {
+          depositedList.appendChild(userItem);
+          depositedCount++;
+        } else {
+          notDepositedList.appendChild(userItem);
+          notDepositedCount++;
+        }
+      }
+      document.getElementById("deposited-total").innerText = depositedCount;
+      document.getElementById("not-deposited-total").innerText = notDepositedCount;
+    }
+    
+    // Initial load of users after inscription (and reload après inscription)
+    loadUsers();
+  </script>
+</body>
+</html>
