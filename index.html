@@ -247,7 +247,7 @@
           referrer: referralInput || null,
           verified: false,
           timestamp: new Date(),
-          team: referralInput || "Sans équipe" // Mampiditra ny mpampiasa ao amin'ny ekipa
+          team: referralInput || userReferralCode // Mampiditra ny mpampiasa ao amin'ny ekipa
         });
         await setDoc(doc(db, "balances", user.uid), { soldeDepot: 0, soldeGains: 0 });
         showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
@@ -328,7 +328,7 @@
       let nonValidatedCount = 0;
       for (const team in teams) {
         if (teams[team].validated) validatedCount++;
-        else nonValidatedCount++;
+    (    else nonValidatedCount++;
       }
       document.getElementById("validated-teams-count").innerText = validatedCount;
       document.getElementById("nonvalidated-teams-count").innerText = nonValidatedCount;
