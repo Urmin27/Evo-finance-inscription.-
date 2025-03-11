@@ -1,4 +1,4 @@
-<!DOCTYPE html>, 
+<!DOCTYPE html>
 <html lang="mg">
 <head>
   <meta charset="UTF-8">
@@ -122,8 +122,11 @@
   
   <!-- Faritra ho an'ny olona tsy miditra amin'ny lien inscription -->
   <div id="copy-message" class="hidden">
-    <p>Veuillez copier le lien d'inscription et de connexion pour accéder à ce formulaire.</p>
+    <p>Copier le lien d'inscription</p>
     <button id="copy-link-btn">Copier le lien d'inscription</button>
+    <p style="margin-top: 20px;">Copier mon code d'invitation</p>
+    <button id="copy-referral-btn">Copier mon code d'invitation</button>
+    <p id="referral-code-display" style="margin-top: 10px; color: #cc0066; font-weight: bold;"></p>
   </div>
   
   <!-- Faritra ho an'ny formulaire d'inscription (rehefa misy ?inscription=1) -->
@@ -218,6 +221,18 @@
       });
     });
     
+    // Copier le code d'invitation
+    document.getElementById("copy-referral-btn").addEventListener("click", () => {
+      const referralCode = document.getElementById("referral-code-display").innerText.replace("Votre code référal : ", "");
+      if (referralCode) {
+        navigator.clipboard.writeText(referralCode).then(() => {
+          alert("Code référal copié: " + referralCode);
+        });
+      } else {
+        alert("Aucun code référal disponible.");
+      }
+    });
+    
     // Bouton Connectez-vous: Asehoy ny formulaire de connexion
     document.getElementById("login-btn").addEventListener("click", () => {
       document.getElementById("registration-container").classList.add("hidden");
@@ -253,6 +268,8 @@
         showNotification("Inscription réussie. Votre code référal: " + userReferralCode);
         document.getElementById("registration-form").reset();
         loadTeamsSummary(); // Mamerina ny calcul des équipes
+        // Asehoy ny code référal eo ambany amin'ny lien copier
+        document.getElementById("referral-code-display").innerText = "Votre code référal : " + userReferralCode;
       } catch (error) {
         console.error("Erreur lors de l'inscription: ", error);
         showNotification("Erreur: " + error.message);
@@ -268,7 +285,7 @@
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         showNotification("Connexion réussie !");
         // Redirection vers la page d'accueil après connexion
-        window.location.href = "accueil.html"; // Ovay araka ny URL anao
+        window.location.href = "https://we-evo-finance.vercel.app/"; // Ovay araka ny URL anao
       } catch (error) {
         console.error("Erreur lors de la connexion: ", error);
         showNotification("Erreur: " + error.message);
