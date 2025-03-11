@@ -328,7 +328,7 @@
       let nonValidatedCount = 0;
       for (const team in teams) {
         if (teams[team].validated) validatedCount++;
-    (    else nonValidatedCount++;
+        else nonValidatedCount++;
       }
       document.getElementById("validated-teams-count").innerText = validatedCount;
       document.getElementById("nonvalidated-teams-count").innerText = nonValidatedCount;
